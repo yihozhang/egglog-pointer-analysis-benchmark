@@ -71,7 +71,7 @@ def run_benchmark(benchmark_set, benchmark_name):
     # https://singhkays.com/blog/sed-error-i-expects-followed-by-text/
     # print(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
     os.system(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
-    command = f"{EGGLOG_PATH} copied.egg > /dev/null 2> /dev/null"
+    command = f"{EGGLOG_PATH} copied.egg > /dev/null"
     egglog_start_time = timer()
     if os.system(command) != 0 :
         print("error when run souffle on benchmarks")
@@ -102,6 +102,7 @@ parser.add_argument("--generate-bitcode-facts", action='store_true')
 parser.add_argument("--read-data-from-cached", action='store_true')
 parser.add_argument("--ignore-less-than-second", action='store_true')
 parser.add_argument("--no-viz", action='store_true')
+parser.add_argument("--run-benchmark", action='store')
 args = parser.parse_args()
 
 if args.build_cclyzerpp and not build_cclyzerpp():
@@ -114,6 +115,12 @@ if args.build_egglog and not build_egglog():
 
 if args.generate_bitcode_facts:
     gen_facts_from_bc()
+
+if args.run_benchmark is not None:
+    benchmark = args.run_benchmark
+    benchmark_set, benchmark_name = benchmark.split('/')
+    run_benchmark(benchmark_set, benchmark_name)
+    exit()
 
 # benchmark_full_names, souffle_run_times, egglog_run_times = [], [], []
 data = []
