@@ -1,6 +1,8 @@
 import argparse
 import os
-
+# ./build/factgen-exe --out-dir  mini-cclyzerpp/bc-facts/ --context-sensitivity insensitive psql.bc
+# souffle --fact-dir mini-cclyzerpp/bc-facts --output-dir mini-cclyzerpp/benchmark-input datalog/benchmark_setup.project  
+# souffle --fact-dir mini-cclyzerpp/benchmark-input mini-cclyzerpp/main.dl
 EGGLOG_PATH = "./egg-smol/target/release/egg-smol "
 
 def build_cclyzerpp():
