@@ -132,3 +132,6 @@
 ))
 ;; (run 13)
 (run 100000)
+
+(print-size expr_points_to)
+(print-size ptr_points_to)
