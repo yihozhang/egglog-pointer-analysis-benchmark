@@ -1,0 +1,6 @@
+[submodule "cclyzerpp"]
+	path = cclyzerpp
+	url = git@github.com:yihozhang/cclyzerpp.git
+[submodule "egg-smol"]
+	path = egg-smol
+	url = git@github.com:yihozhang/egg-smol.git
