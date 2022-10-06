@@ -1,8 +1,7 @@
 import argparse
 import os
-# ./build/factgen-exe --out-dir  mini-cclyzerpp/bc-facts/ --context-sensitivity insensitive psql.bc
-# souffle --fact-dir mini-cclyzerpp/bc-facts --output-dir mini-cclyzerpp/benchmark-input datalog/benchmark_setup.project  
-# souffle --fact-dir mini-cclyzerpp/benchmark-input mini-cclyzerpp/main.dl
+from timeit import default_timer as timer
+
 EGGLOG_PATH = "./egg-smol/target/release/egg-smol "
 FACT_GEN = "./cclyzerpp/build/factgen-exe "
 
@@ -53,7 +52,28 @@ def gen_benchmark_inputs():
             if os.system(command) != 0:
                 print("error when generating benchmark inputs")
                 exit(1)
-            # souffle --fact-dir mini-cclyzerpp/bc-facts --output-dir mini-cclyzerpp/benchmark-input datalog/benchmark_setup.project  
+
+def run_benchmark(benchmark_set, benchmark_name):
+    # souffle --fact-dir mini-cclyzerpp/benchmark-input mini-cclyzerpp/main.dl
+    command = f"souffle -F benchmark-input/{benchmark_set}/{benchmark_name} main.dl"
+    souffle_start_time = timer()
+    if os.system(command) != 0 :
+        print("error when run souffle on benchmarks")
+        exit(1)
+    souffle_end_time = timer()
+    souffle_duration = souffle_end_time - souffle_start_time
+
+    os.system("cp main.egg copied.egg")
+    os.system(f"sed -i 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
+    command = f"{EGGLOG_PATH} copied.egg > /dev/null"
+    egglog_start_time = timer()
+    if os.system(command) != 0 :
+        print("error when run souffle on benchmarks")
+        exit(1)
+    egglog_end_time = timer()
+    egglog_duration = egglog_end_time - egglog_start_time
+    print(f"souffle takes time {souffle_duration}, egglog takes time {egglog_duration}")
+    (souffle_duration, egglog_duration)
 
 
 parser = argparse.ArgumentParser(description='Benchmarking egglog on the pointer analysis benchmark')
@@ -71,4 +91,7 @@ if args.build_egglog and not build_egglog():
     exit(1)
 
 # gen_facts_from_bc()
-gen_benchmark_inputs()
+# gen_benchmark_inputs()
+# run_benchmark("coreutils-8.24", "cat.bc")
+# run_benchmark("coreutils-8.24", "cp.bc")
+run_benchmark("postgresql-9.5.2", "psql.bc")
