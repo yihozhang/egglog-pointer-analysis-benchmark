@@ -1,6 +1,9 @@
 import argparse
 import os
 from timeit import default_timer as timer
+import matplotlib.pyplot as plt
+import numpy as np
+import csv
 
 # NOTE that we are only comparing against souffle interpreter mode single thread
 
@@ -65,8 +68,10 @@ def run_benchmark(benchmark_set, benchmark_name):
     souffle_duration = souffle_end_time - souffle_start_time
 
     os.system("cp main.egg copied.egg")
-    os.system(f"sed -i 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
-    command = f"{EGGLOG_PATH} copied.egg > /dev/null"
+    # https://singhkays.com/blog/sed-error-i-expects-followed-by-text/
+    # print(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
+    os.system(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
+    command = f"{EGGLOG_PATH} copied.egg > /dev/null 2> /dev/null"
     egglog_start_time = timer()
     if os.system(command) != 0 :
         print("error when run souffle on benchmarks")
@@ -74,13 +79,29 @@ def run_benchmark(benchmark_set, benchmark_name):
     egglog_end_time = timer()
     egglog_duration = egglog_end_time - egglog_start_time
     print(f"souffle takes time {souffle_duration}, egglog takes time {egglog_duration}")
-    (souffle_duration, egglog_duration)
+    return (souffle_duration, egglog_duration)
+
+def run_all_benchmarks():
+    data = []
+    for benchmark_set in BENCHMARK_SETS:
+        benchmark_parent_dir = f"benchmark-input/{benchmark_set}"
+        for benchmark_name in os.listdir(benchmark_parent_dir):
+            time = run_benchmark(benchmark_set, benchmark_name)
+            data.append([
+                f"{benchmark_set}/{benchmark_name}",
+                time[0],
+                time[1],
+            ])
+    return data
 
 
 parser = argparse.ArgumentParser(description='Benchmarking egglog on the pointer analysis benchmark')
 parser.add_argument("--build-cclyzerpp", action='store_true')
 parser.add_argument("--build-egglog", action='store_true')
-
+parser.add_argument("--generate-bitcode-facts", action='store_true')
+parser.add_argument("--read-data-from-cached", action='store_true')
+parser.add_argument("--ignore-less-than-second", action='store_true')
+parser.add_argument("--no-viz", action='store_true')
 args = parser.parse_args()
 
 if args.build_cclyzerpp and not build_cclyzerpp():
@@ -88,11 +109,53 @@ if args.build_cclyzerpp and not build_cclyzerpp():
     exit(1)
 
 if args.build_egglog and not build_egglog():
-    print("build egglgo failed")
+    print("build egglog failed")
     exit(1)
 
-# gen_facts_from_bc()
-# gen_benchmark_inputs()
-run_benchmark("coreutils-8.24", "cat.bc")
-# run_benchmark("coreutils-8.24", "cp.bc")
-# run_benchmark("postgresql-9.5.2", "psql.bc")
+if args.generate_bitcode_facts:
+    gen_facts_from_bc()
+
+# benchmark_full_names, souffle_run_times, egglog_run_times = [], [], []
+data = []
+
+if args.read_data_from_cached:
+    with open('benchmark_results.csv', newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            data.append((row[0], float(row[1]), float(row[2])))
+else:
+    data = run_all_benchmarks()
+
+    with open('benchmark_results.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        for i in range(len(data)):
+            writer.writerow(data[i])
+
+if args.ignore_less_than_second:
+    data = list(filter(lambda x: x[1] >= 1 or x[2] >= 1, data))
+
+benchmark_full_names = list(map(lambda x: x[0], data))
+souffle_run_times = list(map(lambda x: x[1], data))
+egglog_run_times = list(map(lambda x: x[2], data))
+
+x = np.arange(len(benchmark_full_names))  # the label locations
+width = 0.35  # the width of the bars
+
+fig, ax = plt.subplots()
+rects1 = ax.bar(x - width/2, souffle_run_times, width, label='Souffle')
+rects2 = ax.bar(x + width/2, egglog_run_times, width, label='Egglog')
+
+ax.set_ylabel('Time (s)')
+ax.set_title('Run time of cclyzer++ and egglog')
+ax.set_xticks(x, benchmark_full_names, rotation='vertical')
+ax.legend()
+
+# ax.bar_label(rects1, padding=3)
+# ax.bar_label(rects2, padding=3)
+
+fig.tight_layout()
+plt.savefig('plot.png')
+
+if not args.no_viz:
+    plt.show()
+
