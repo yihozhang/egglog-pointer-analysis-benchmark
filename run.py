@@ -2,6 +2,8 @@ import argparse
 import os
 from timeit import default_timer as timer
 
+# NOTE that we are only comparing against souffle interpreter mode single thread
+
 EGGLOG_PATH = "./egg-smol/target/release/egg-smol "
 FACT_GEN = "./cclyzerpp/build/factgen-exe "
 
@@ -54,7 +56,6 @@ def gen_benchmark_inputs():
                 exit(1)
 
 def run_benchmark(benchmark_set, benchmark_name):
-    # souffle --fact-dir mini-cclyzerpp/benchmark-input mini-cclyzerpp/main.dl
     command = f"souffle -F benchmark-input/{benchmark_set}/{benchmark_name} main.dl"
     souffle_start_time = timer()
     if os.system(command) != 0 :
@@ -92,6 +93,6 @@ if args.build_egglog and not build_egglog():
 
 # gen_facts_from_bc()
 # gen_benchmark_inputs()
-# run_benchmark("coreutils-8.24", "cat.bc")
+run_benchmark("coreutils-8.24", "cat.bc")
 # run_benchmark("coreutils-8.24", "cp.bc")
-run_benchmark("postgresql-9.5.2", "psql.bc")
+# run_benchmark("postgresql-9.5.2", "psql.bc")
