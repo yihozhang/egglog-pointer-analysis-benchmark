@@ -1,0 +1,44 @@
+#include "cclyzerpp/datalog/common.project"
+#include "cclyzerpp/datalog/points-to/unification.dl"
+
+// constants
+.decl constant_ptr_points_to_no_ctx(?alloc: Allocation, ?ptrAlloc: Allocation)
+constant_ptr_points_to_no_ctx(a, p) :- constant_ptr_points_to(_, a, _, p).
+.output constant_ptr_points_to_no_ctx(IO=file, filename="constant_ptr_points_to.csv")
+.output constant_points_to
+
+// functions
+.output function
+.output function_nparams
+.output function_param
+
+// instructions
+.output instruction_in_function
+
+// assign
+.output instruction_assigns_to
+.output assign_instruction
+
+// load
+.output load_instruction
+.output load_instruction_address
+
+// store
+.output store_instruction_value
+.output store_instruction_address
+
+// alloc
+.decl allocated_at_no_ctx(?alloc: Allocation, ?var: Variable)
+allocated_at_no_ctx(a, v) :- unification_allocations.allocated_at(_, a, _, v).
+.output allocated_at_no_ctx(IO=file, filename="allocated_at.csv")
+
+// field
+.output unification_subobjects.alloc_subregion_root(IO=file, filename="alloc_subregion_root.csv")
+
+.output call_instruction_fn_operand
+.output call_instruction_fn_target
+.output call_instruction
+.output call_instruction_arg
+
+.output ret_instruction
+.output ret_instruction_value
