@@ -1,7 +1,6 @@
 import argparse
 import os
 from timeit import default_timer as timer
-from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
@@ -70,7 +69,8 @@ with open("main.egg") as f:
     MAIN_EGGLOG_CODE = f.read()
 
 def run_benchmark(benchmark_set, benchmark_name):
-    command = f"souffle -F benchmark-input/{benchmark_set}/{benchmark_name} main.dl"
+    input_dir = f"benchmark-input/{benchmark_set}/{benchmark_name}"
+    command = f"souffle -F {input_dir} main.dl"
     souffle_start_time = timer()
     if os.system(command) != 0 :
         print("error when run souffle on benchmarks")
@@ -78,14 +78,7 @@ def run_benchmark(benchmark_set, benchmark_name):
     souffle_end_time = timer()
     souffle_duration = souffle_end_time - souffle_start_time
 
-    egglog_input = Path(f"egglog-inputs/{benchmark_set}/{benchmark_name}.egg")
-    egglog_input.parent.mkdir(exist_ok=True, parents=True)
-    egglog_input.write_text(MAIN_EGGLOG_CODE.replace(
-        "benchmark-input", 
-        f"benchmark-input/{benchmark_set}/{benchmark_name}"
-    ))
-
-    command = f"{EGGLOG_PATH} {egglog_input} > /dev/null"
+    command = f"{EGGLOG_PATH} main.egg -F {input_dir} > /dev/null"
     print(f"Running {command}")
     egglog_start_time = timer()
     if os.system(command) != 0 :
