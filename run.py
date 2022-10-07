@@ -10,14 +10,21 @@ import csv
 EGGLOG_PATH = "./egg-smol/target/release/egg-smol "
 FACT_GEN = "./cclyzerpp/build/factgen-exe "
 
+def shout(msg):
+    bars = "=" * len(msg)
+    print(bars)
+    print(msg)
+    print(bars + '\n')
+
 def build_cclyzerpp():
-    code = os.system("figlet -k building cclyzer++")
+    shout("building cclyzer++")
     code |= os.system("cd cclyzerpp && cmake -G Ninja -B build -S .")
     code |= os.system("cd cclyzerpp && cmake --build build -j $(nproc) --target factgen-exe")
     return code == 0
 
 def build_egglog():
-    code = os.system("figlet -k building egglog")
+    shout("building egglog")
+    code = 0
     code |= os.system("cd egg-smol && cargo build --release")
     return code == 0
 
