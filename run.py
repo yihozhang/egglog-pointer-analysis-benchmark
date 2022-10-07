@@ -103,6 +103,7 @@ parser.add_argument("--read-data-from-cached", action='store_true')
 parser.add_argument("--ignore-less-than-second", action='store_true')
 parser.add_argument("--no-viz", action='store_true')
 parser.add_argument("--run-benchmark", action='store')
+parser.add_argument("--no-run", action='store_true')
 args = parser.parse_args()
 
 if args.build_cclyzerpp and not build_cclyzerpp():
@@ -116,13 +117,15 @@ if args.build_egglog and not build_egglog():
 if args.generate_bitcode_facts:
     gen_facts_from_bc()
 
+if args.no_run:
+    exit()
+
 if args.run_benchmark is not None:
     benchmark = args.run_benchmark
     benchmark_set, benchmark_name = benchmark.split('/')
     run_benchmark(benchmark_set, benchmark_name)
     exit()
 
-# benchmark_full_names, souffle_run_times, egglog_run_times = [], [], []
 data = []
 
 if args.read_data_from_cached:
