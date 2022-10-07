@@ -1,6 +1,7 @@
 import argparse
 import os
 from timeit import default_timer as timer
+from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
@@ -65,6 +66,9 @@ def gen_benchmark_inputs():
                 print("error when generating benchmark inputs")
                 exit(1)
 
+with open("main.egg") as f:
+    MAIN_EGGLOG_CODE = f.read()
+
 def run_benchmark(benchmark_set, benchmark_name):
     command = f"souffle -F benchmark-input/{benchmark_set}/{benchmark_name} main.dl"
     souffle_start_time = timer()
@@ -74,14 +78,18 @@ def run_benchmark(benchmark_set, benchmark_name):
     souffle_end_time = timer()
     souffle_duration = souffle_end_time - souffle_start_time
 
-    os.system("cp main.egg copied.egg")
-    # https://singhkays.com/blog/sed-error-i-expects-followed-by-text/
-    # print(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
-    os.system(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
-    command = f"{EGGLOG_PATH} copied.egg > /dev/null"
+    egglog_input = Path(f"egglog-inputs/{benchmark_set}/{benchmark_name}.egg")
+    egglog_input.parent.mkdir(exist_ok=True, parents=True)
+    egglog_input.write_text(MAIN_EGGLOG_CODE.replace(
+        "benchmark-input", 
+        f"benchmark-input/{benchmark_set}/{benchmark_name}"
+    ))
+
+    command = f"{EGGLOG_PATH} {egglog_input} > /dev/null"
+    print(f"Running {command}")
     egglog_start_time = timer()
     if os.system(command) != 0 :
-        print("error when run souffle on benchmarks")
+        print("error when run egglog on benchmarks")
         exit(1)
     egglog_end_time = timer()
     egglog_duration = egglog_end_time - egglog_start_time

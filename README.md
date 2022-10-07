@@ -1,6 +1,10 @@
 # Egglog Pointer Analysis Benchmark
 
+```
+python3 run.py --build-egglog --build-cclyzerpp --ignore-less-than-second
+```
+
 ```bash
-cargo submodule init
-cargo submodule update
+git submodule init
+git submodule update
 ```
