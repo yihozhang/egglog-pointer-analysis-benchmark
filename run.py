@@ -10,14 +10,21 @@ import csv
 EGGLOG_PATH = "./egg-smol/target/release/egg-smol "
 FACT_GEN = "./cclyzerpp/build/factgen-exe "
 
+def shout(msg):
+    bars = "=" * len(msg)
+    print(bars)
+    print(msg)
+    print(bars + '\n')
+
 def build_cclyzerpp():
-    code = os.system("figlet -k building cclyzer++")
+    shout("building cclyzer++")
     code |= os.system("cd cclyzerpp && cmake -G Ninja -B build -S .")
     code |= os.system("cd cclyzerpp && cmake --build build -j $(nproc) --target factgen-exe")
     return code == 0
 
 def build_egglog():
-    code = os.system("figlet -k building egglog")
+    shout("building egglog")
+    code = 0
     code |= os.system("cd egg-smol && cargo build --release")
     return code == 0
 
@@ -58,8 +65,12 @@ def gen_benchmark_inputs():
                 print("error when generating benchmark inputs")
                 exit(1)
 
+with open("main.egg") as f:
+    MAIN_EGGLOG_CODE = f.read()
+
 def run_benchmark(benchmark_set, benchmark_name):
-    command = f"souffle -F benchmark-input/{benchmark_set}/{benchmark_name} main.dl"
+    input_dir = f"benchmark-input/{benchmark_set}/{benchmark_name}"
+    command = f"souffle -F {input_dir} main.dl"
     souffle_start_time = timer()
     if os.system(command) != 0 :
         print("error when run souffle on benchmarks")
@@ -67,14 +78,11 @@ def run_benchmark(benchmark_set, benchmark_name):
     souffle_end_time = timer()
     souffle_duration = souffle_end_time - souffle_start_time
 
-    os.system("cp main.egg copied.egg")
-    # https://singhkays.com/blog/sed-error-i-expects-followed-by-text/
-    # print(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
-    os.system(f"sed -i'' -e 's/benchmark-input/benchmark-input\/{benchmark_set}\/{benchmark_name}/g' copied.egg")
-    command = f"{EGGLOG_PATH} copied.egg > /dev/null"
+    command = f"{EGGLOG_PATH} main.egg -F {input_dir} > /dev/null"
+    print(f"Running {command}")
     egglog_start_time = timer()
     if os.system(command) != 0 :
-        print("error when run souffle on benchmarks")
+        print("error when run egglog on benchmarks")
         exit(1)
     egglog_end_time = timer()
     egglog_duration = egglog_end_time - egglog_start_time
