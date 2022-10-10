@@ -50,19 +50,19 @@
 (rule (
     (constant_points_to e a)
 )(
-    (set (expr_points_to e) (A a))
+    (union (expr_points_to e) (A a))
 ))
 
 (rule (
     (constant_ptr_points_to a b)
 )(
-    (set (ptr_points_to (A a)) (A b))
+    (union (ptr_points_to (A a)) (A b))
 ))
 
 (rule (
     (allocated_at a v)
 )(
-    (set (expr_points_to v) (A a))
+    (union (expr_points_to v) (A a))
 ))
 
 ;; assign
@@ -70,7 +70,7 @@
     (assign_instruction v e)
     (= (expr_points_to e) a)
 )(
-    (set (expr_points_to v) a)
+    (union (expr_points_to v) a)
 ))
 
 ;; load
@@ -80,7 +80,7 @@
     (= (expr_points_to u) a)
     (= (ptr_points_to a) b)
 )(
-    (set (expr_points_to e) b)
+    (union (expr_points_to e) b)
 ))
 
 ;; store
@@ -90,7 +90,7 @@
     (= (expr_points_to v) a)
     (= (expr_points_to u) b)
 )(
-    (set (ptr_points_to a) b)
+    (union (ptr_points_to a) b)
 ))
 
 ;; field (insensitive)
@@ -98,14 +98,14 @@
     (alloc_subregion_root ef e)
     (= (ptr_points_to (A ef)) a)
 )(
-    (set (ptr_points_to (A e)) a)
+    (union (ptr_points_to (A e)) a)
 ))
 
 (rule (
     (alloc_subregion_root ef e)
     (= (ptr_points_to (A e)) a)
 )(
-    (set (ptr_points_to (A ef)) a)
+    (union (ptr_points_to (A ef)) a)
 ))
 
 ;; If `f(t* x)`, `f(v)`, and `v -> a`, then `x -> a`.
@@ -116,7 +116,7 @@
     (call_instruction_arg instr idx v)
     (= (expr_points_to v) a)
 )(
-    (set (expr_points_to x) a)
+    (union (expr_points_to x) a)
 ))
 
 ;; If `return u` in `f` and `u -> a`, then `f(z) -> a`.
@@ -128,7 +128,7 @@
     (instruction_assigns_to call_instr to_var)
     (= (expr_points_to u) a)
 )(
-    (set (expr_points_to to_var) a)
+    (union (expr_points_to to_var) a)
 ))
 ;; (run 13)
 (run 100000)

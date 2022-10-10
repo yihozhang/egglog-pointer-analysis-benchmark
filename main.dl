@@ -64,20 +64,11 @@ unify_expr(x, a) :-
 // If `return u` in `f` and `u -> a`, then `f(z) -> a`.
 // also need to do assigns_to, so that not only expr, but also vars are unified.
 unify_expr(to_var, a) :-
-// .decl A(u:Operand)
-// .output A(IO=stdout)
-// A(u) :-
-  // function(f),
   instruction_in_function(ret_instr, f),
   call_instruction_fn_target(call_instr, f),
   ret_instruction_value(ret_instr, u),
   instruction_assigns_to(call_instr, to_var),
   expr_points_to_choice(u, a).
-
-// This rule is buggy, according to Langston's blog post
-// expr_points_to_choice(e, r) :-
-//   unify_expr(e, a),
-//   unify(r, a).
 
 .decl is_repr(repr: Allocation)
 is_repr(repr) :-
