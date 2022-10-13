@@ -18,6 +18,7 @@ def shout(msg):
 
 def build_cclyzerpp():
     shout("building cclyzer++")
+    code = 0
     code |= os.system("cd cclyzerpp && cmake -G Ninja -B build -S .")
     code |= os.system("cd cclyzerpp && cmake --build build -j $(nproc) --target factgen-exe")
     return code == 0
