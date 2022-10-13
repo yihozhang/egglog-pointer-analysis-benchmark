@@ -46,25 +46,35 @@ def gen_facts_from_bc():
                 print("error when generating facts from bitcode modules")
                 exit(1)
 
-def gen_benchmark_inputs():
+def compile_cclyzerpp():
     print("compiling cclyzer++...")
     COMPILE_SOUFFLE = f"souffle -g benchmark_setup benchmark_setup.project && souffle-compile benchmark_setup.cpp"
     if os.system(COMPILE_SOUFFLE) != 0:
         print("compiling cclyzer++ failed. Aborting.")
         exit(1)
+
+def gen_benchmark_input_for(benchmark_set, benchmark_name, compile=False):
+    fact_dir = f"bc-facts/{benchmark_set}/{benchmark_name}"
+    benchmark_input_dir = f"benchmark-input/{benchmark_set}/{benchmark_name}"
+    if os.path.isfile(fact_dir):
+        return
+    os.system(f"mkdir -p {benchmark_input_dir}")
+    command = None
+    if compile:
+        command = f"./benchmark_setup -F {fact_dir} -D {benchmark_input_dir}"
+    else:
+        command = f"souffle benchmark_setup.project -F {fact_dir} -D {benchmark_input_dir}"
+    print(command)
+    if os.system(command) != 0:
+        print("error when generating benchmark inputs")
+        exit(1)
+
+def gen_benchmark_inputs():
+    compile_cclyzerpp()
     for benchmark_set in BENCHMARK_SETS:
         fact_parent_dir = f"bc-facts/{benchmark_set}"
         for benchmark_name in os.listdir(fact_parent_dir):
-            fact_dir = f"{fact_parent_dir}/{benchmark_name}"
-            benchmark_input_dir = f"benchmark-input/{benchmark_set}/{benchmark_name}"
-            if os.path.isfile(fact_dir):
-                continue
-            os.system(f"mkdir -p {benchmark_input_dir}")
-            command = f"./benchmark_setup -F {fact_dir} -D {benchmark_input_dir}"
-            print(command)
-            if os.system(command) != 0:
-                print("error when generating benchmark inputs")
-                exit(1)
+            gen_benchmark_input_for(benchmark_set, benchmark_name, True)
 
 with open("main.egg") as f:
     MAIN_EGGLOG_CODE = f.read()
@@ -108,6 +118,8 @@ parser = argparse.ArgumentParser(description='Benchmarking egglog on the pointer
 parser.add_argument("--build-cclyzerpp", action='store_true')
 parser.add_argument("--build-egglog", action='store_true')
 parser.add_argument("--generate-bitcode-facts", action='store_true')
+parser.add_argument("--generate-benchmark-inputs", action='store_true')
+parser.add_argument("--generate-benchmark-inputs-for", action='store')
 parser.add_argument("--read-data-from-cached", action='store_true')
 parser.add_argument("--ignore-less-than-second", action='store_true')
 parser.add_argument("--no-viz", action='store_true')
@@ -125,6 +137,15 @@ if args.build_egglog and not build_egglog():
 
 if args.generate_bitcode_facts:
     gen_facts_from_bc()
+
+if args.generate_benchmark_inputs:
+    gen_benchmark_inputs()
+
+if args.generate_benchmark_inputs_for is not None:
+    benchmark = args.generate_benchmark_inputs_for
+    benchmark_set, benchmark_name = benchmark.split('/')
+    gen_benchmark_input_for(benchmark_set, benchmark_name)
+    exit()
 
 if args.no_run:
     exit()
