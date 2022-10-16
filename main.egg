@@ -37,10 +37,12 @@
 (input constant_points_to "constant_points_to.csv")
 (relation constant_ptr_points_to (String String))
 (input constant_ptr_points_to "constant_ptr_points_to.csv")
-(relation allocated_at (String String))
-(input allocated_at "allocated_at.csv")
-(relation alloc_subregion_root (String String))
-(input alloc_subregion_root "alloc_subregion_root.csv")
+(relation allocation_by_instruction (String String))
+(input allocation_by_instruction "allocation_by_instruction.csv")
+;; (relation alloc_subregion_root (String String))
+;; (input alloc_subregion_root "alloc_subregion_root.csv")
+(relation getelementptr_instruction_base (String String))
+(input getelementptr_instruction_base "getelementptr_instruction_base.csv")
 
 (datatype Allocation (A String))
 
@@ -60,7 +62,8 @@
 ))
 
 (rule (
-    (allocated_at a v)
+    (allocation_by_instruction i a)
+    (instruction_assigns_to i v)
 )(
     (union (expr_points_to v) (A a))
 ))
@@ -94,18 +97,32 @@
 ))
 
 ;; field (insensitive)
+;; (rule (
+;;     (alloc_subregion_root ef e)
+;;     (= (ptr_points_to (A ef)) a)
+;; )(
+;;     (union (ptr_points_to (A e)) a)
+;; ))
 (rule (
-    (alloc_subregion_root ef e)
-    (= (ptr_points_to (A ef)) a)
+    (getelementptr_instruction_base i e)
+    (instruction_assigns_to i v)
+    (= (expr_points_to v) a)
 )(
-    (union (ptr_points_to (A e)) a)
+    (union (expr_points_to e) a)
 ))
 
+;; (rule (
+;;     (alloc_subregion_root ef e)
+;;     (= (ptr_points_to (A e)) a)
+;; )(
+;;     (union (ptr_points_to (A ef)) a)
+;; ))
 (rule (
-    (alloc_subregion_root ef e)
-    (= (ptr_points_to (A e)) a)
+    (getelementptr_instruction_base i e)
+    (instruction_assigns_to i v)
+    (= (expr_points_to e) a)
 )(
-    (union (ptr_points_to (A ef)) a)
+    (union (expr_points_to v) a)
 ))
 
 ;; If `f(t* x)`, `f(v)`, and `v -> a`, then `x -> a`.

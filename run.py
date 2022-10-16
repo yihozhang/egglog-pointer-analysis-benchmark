@@ -70,11 +70,11 @@ def gen_benchmark_input_for(benchmark_set, benchmark_name, compile=False):
         exit(1)
 
 def gen_benchmark_inputs():
-    compile_cclyzerpp()
+    # compile_cclyzerpp()
     for benchmark_set in BENCHMARK_SETS:
         fact_parent_dir = f"bc-facts/{benchmark_set}"
         for benchmark_name in os.listdir(fact_parent_dir):
-            gen_benchmark_input_for(benchmark_set, benchmark_name, True)
+            gen_benchmark_input_for(benchmark_set, benchmark_name, False)
 
 with open("main.egg") as f:
     MAIN_EGGLOG_CODE = f.read()

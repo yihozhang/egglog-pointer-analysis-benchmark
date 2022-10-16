@@ -1,24 +1,20 @@
 #include "types.dl"
 
-.decl eql(a:Allocation, b:Allocation) eqrel
-
 unify(a, a) :- unify_expr(_, a).  // includes all allocations via `malloc`
 
-eql(a, b) :-
+unify(a, b) :-
   unify_expr(e, a),
   unify_expr(e, b),
   ord(a) <= ord(b).
 
-eql(b, c) :-
+unify(b, c) :-
   unify_ptr(a, b),
   unify_ptr(a, c),
   ord(b) <= ord(c).
 
-// unify(as(leader, Allocation), a) :- leader = min as(b, number) : eql(a, b).
-unify(a, b) :- eql(a, b).
 unify(a, b) <=
   unify(c, b) :-
-    as(c, number) <= as(a, number).
+    ord(c) <= ord(a).
 
 unify_expr(e, a) :- constant_points_to(e, a).
 unify_ptr(a, b) :- constant_ptr_points_to(a, b).
@@ -29,7 +25,8 @@ ptr_points_to_choice(e, a) :- unify_ptr(e, a).
 
 unify_ptr(a, to) :-
   ptr_points_to_choice(d, to),
-  eql(d, a).
+  unify(l, a),
+  unify(l, d).
 
 // assign
 unify_expr(v, a) :-
@@ -41,6 +38,7 @@ unify_expr(e, b) :-
   load_instruction_address(i, u),
   instruction_assigns_to(i, e),
   expr_points_to_choice(u, a),
+  // unify(r, a), unify(r, a1), // all unified allocation of a
   ptr_points_to_choice(a, b).
 
 // store
@@ -103,10 +101,9 @@ expr_points_to_final(e, r) :-
 ptr_points_to_final(a, r) :-
   ptr_points_to_choice(a, b),
   unify(r, b),
-  is_repr(r),
-  is_repr(a).
+  is_repr(r).
 
 .printsize expr_points_to_final
 .printsize ptr_points_to_final
-// .output expr_points_to_final
-// .output ptr_points_to_final
+.output ptr_points_to_final
+.output expr_points_to_final
