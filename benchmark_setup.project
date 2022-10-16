@@ -29,12 +29,10 @@ constant_ptr_points_to_no_ctx(a, p) :- constant_ptr_points_to(_, a, _, p).
 .output store_instruction_address
 
 // alloc
-.decl allocated_at_no_ctx(?alloc: Allocation, ?var: Variable)
-allocated_at_no_ctx(a, v) :- points_to.allocated_at(_, a, _, v).
-.output allocated_at_no_ctx(IO=file, filename="allocated_at.csv")
+.output allocation_by_instruction
 
 // field
-.output points_to.alloc_subregion_root(IO=file, filename="alloc_subregion_root.csv")
+.output getelementptr_instruction_base
 
 .output call_instruction_fn_operand
 .output call_instruction_fn_target
@@ -43,5 +41,3 @@ allocated_at_no_ctx(a, v) :- points_to.allocated_at(_, a, _, v).
 
 .output ret_instruction
 .output ret_instruction_value
-
-.output allocation_by_instruction

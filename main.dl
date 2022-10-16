@@ -18,7 +18,7 @@ unify(a, b) <=
 
 unify_expr(e, a) :- constant_points_to(e, a).
 unify_ptr(a, b) :- constant_ptr_points_to(a, b).
-unify_expr(v, a) :- allocated_at(a, v).
+unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v).
 
 expr_points_to_choice(e, a) :- unify_expr(e, a).
 ptr_points_to_choice(e, a) :- unify_ptr(e, a).
@@ -44,13 +44,21 @@ unify_ptr(a, b) :-
   expr_points_to_choice(u, b).
 
 // field (insensitive)
-unify_ptr(e, a) :-
-  alloc_subregion_root(ef, e),
-  ptr_points_to_choice(ef, a).
+// unify_ptr(e, a) :-
+//   alloc_subregion_root(ef, e),
+//   ptr_points_to_choice(ef, a).
+unify_expr(v, a) :-
+  getelementptr_instruction_base(i, e),
+  instruction_assigns_to(i, v),
+  expr_points_to_choice(e, a).
 
-unify_ptr(ef, a) :-
-  alloc_subregion_root(ef, e),
-  ptr_points_to_choice(e, a).
+// unify_ptr(ef, a) :-
+//   alloc_subregion_root(ef, e),
+//   ptr_points_to_choice(e, a).
+unify_expr(e, a) :-
+  getelementptr_instruction_base(i, e),
+  instruction_assigns_to(i, v),
+  expr_points_to_choice(v, a).
 
 
 // If `f(t* x)`, `f(v)`, and `v -> a`, then `x -> a`.
@@ -90,5 +98,5 @@ ptr_points_to_final(a, r) :-
   unify(r, b),
   is_repr(r).
 
-.printsize expr_points_to_choice
 .printsize expr_points_to_final
+.printsize ptr_points_to_final
