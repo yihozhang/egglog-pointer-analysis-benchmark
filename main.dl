@@ -2,7 +2,7 @@
 
 .decl eql(a:Allocation, b:Allocation) eqrel
 
-unify(a, a) :- unify_expr(_, a).  // includes all allocations via `malloc`
+eql(a, a) :- unify_expr(_, a).
 
 eql(a, b) :-
   unify_expr(e, a),
@@ -14,22 +14,40 @@ eql(b, c) :-
   unify_ptr(a, c),
   ord(b) <= ord(c).
 
-// unify(as(leader, Allocation), a) :- leader = min as(b, number) : eql(a, b).
 unify(a, b) :- eql(a, b).
-unify(a, b) <=
-  unify(c, b) :-
+unify(a, b) <= unify(c, b) :-
     as(c, number) <= as(a, number).
-
-unify_expr(e, a) :- constant_points_to(e, a).
-unify_ptr(a, b) :- constant_ptr_points_to(a, b).
-unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v).
 
 expr_points_to_choice(e, a) :- unify_expr(e, a).
 ptr_points_to_choice(e, a) :- unify_ptr(e, a).
 
+// congruence
 unify_ptr(a, to) :-
   ptr_points_to_choice(d, to),
+  // unify(r, a), unify(r, d).
   eql(d, a).
+
+// constant
+unify_expr(e, a) :- constant_points_to(e, a).
+// constant_ptr
+unify_ptr(a, b) :- constant_ptr_points_to(a, b).
+// alloc
+unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v).
+
+// alias rule
+// eql(yAlloc, pAlloc) :-
+//   store_instruction_address(si, x),
+//   // expr_points_to_choice(x, xAlloc),
+//   unify_expr(x, xAlloc),
+//   store_instruction_value(si, y),
+//   expr_points_to_choice(y, yAlloc),
+//   load_instruction_address(li, q),
+//   // expr_points_to_choice(q, qAlloc),
+//   unify_expr(q, qAlloc),
+//   instruction_assigns_to(li, p),
+//   expr_points_to_choice(p, pAlloc),
+//   // eql(xAlloc, qAlloc).
+//   xAlloc = qAlloc.
 
 // assign
 unify_expr(v, a) :-
@@ -108,5 +126,9 @@ ptr_points_to_final(a, r) :-
 
 .printsize expr_points_to_final
 .printsize ptr_points_to_final
+.printsize eql
+.printsize unify_expr
+.printsize unify_ptr
+.printsize unify
 // .output expr_points_to_final
 // .output ptr_points_to_final

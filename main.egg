@@ -39,8 +39,6 @@
 (input constant_ptr_points_to "constant_ptr_points_to.csv")
 (relation allocation_by_instruction (String String))
 (input allocation_by_instruction "allocation_by_instruction.csv")
-;; (relation alloc_subregion_root (String String))
-;; (input alloc_subregion_root "alloc_subregion_root.csv")
 (relation getelementptr_instruction_base (String String))
 (input getelementptr_instruction_base "getelementptr_instruction_base.csv")
 
@@ -49,24 +47,42 @@
 (function expr_points_to (String) Allocation)
 (function ptr_points_to (Allocation) Allocation)
 
+;; constant
 (rule (
     (constant_points_to e a)
 )(
     (union (expr_points_to e) (A a))
 ))
 
+;; constant_ptr
 (rule (
     (constant_ptr_points_to a b)
 )(
     (union (ptr_points_to (A a)) (A b))
 ))
 
+;; alloc
 (rule (
     (allocation_by_instruction i a)
     (instruction_assigns_to i v)
 )(
     (union (expr_points_to v) (A a))
 ))
+
+;; alias rule
+;; (rule (
+;;     (store_instruction_address si x)
+;;     (= (expr_points_to x) xAlloc)
+;;     (store_instruction_value si y)
+;;     (= (expr_points_to y) yAlloc)
+;;     (load_instruction_address li q)
+;;     (= (expr_points_to q) qAlloc)
+;;     (instruction_assigns_to li p)
+;;     (= (expr_points_to p) pAlloc)
+;;     (= xAlloc qAlloc)
+;; )(
+;;     (union yAlloc pAlloc)
+;; ))
 
 ;; assign
 (rule (
