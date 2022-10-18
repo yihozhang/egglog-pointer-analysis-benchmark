@@ -37,17 +37,14 @@ unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v
 // alias rule
 // eql(yAlloc, pAlloc) :-
 //   store_instruction_address(si, x),
-//   // expr_points_to_choice(x, xAlloc),
-//   unify_expr(x, xAlloc),
+//   expr_points_to_choice(x, xAlloc),
 //   store_instruction_value(si, y),
 //   expr_points_to_choice(y, yAlloc),
 //   load_instruction_address(li, q),
-//   // expr_points_to_choice(q, qAlloc),
-//   unify_expr(q, qAlloc),
+//   expr_points_to_choice(q, qAlloc),
 //   instruction_assigns_to(li, p),
 //   expr_points_to_choice(p, pAlloc),
-//   // eql(xAlloc, qAlloc).
-//   xAlloc = qAlloc.
+//   eql(xAlloc, qAlloc).
 
 // assign
 unify_expr(v, a) :-
