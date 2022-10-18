@@ -1,3 +1,4 @@
+import statistics
 import argparse
 import os
 from timeit import default_timer as timer
@@ -111,6 +112,10 @@ def run_all_benchmarks():
                 time[0],
                 time[1],
             ])
+    gm = statistics.geometric_mean([e / s for (_, s, e) in data])
+    total = sum([e for (_, _, e) in data]) / sum([s for (_, s, _) in data])
+    print(f"Geomean egglog/souffle: {gm}")
+    print(f"Total egglog/souffle: {total}")
     return data
 
 
