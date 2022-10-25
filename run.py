@@ -1,3 +1,4 @@
+import statistics
 import argparse
 import os
 from timeit import default_timer as timer
@@ -7,11 +8,12 @@ import csv
 
 # NOTE that we are only comparing against souffle interpreter mode single thread
 
-EGGLOG_PATH = "./egg-smol/target/release/egg-smol "
+DEFAULT_EGGLOG_DIR = "./egg-smol/"
 FACT_GEN = "./cclyzerpp/build/factgen-exe "
 TIME_OUT = "20s"
 
 parser = argparse.ArgumentParser(description='Benchmarking egglog on the pointer analysis benchmark')
+parser.add_argument("--egglog-path", default=DEFAULT_EGGLOG_DIR)
 parser.add_argument("--build-cclyzerpp", action='store_true')
 parser.add_argument("--build-egglog", action='store_true')
 parser.add_argument("--generate-bitcode-facts", action='store_true')
@@ -42,10 +44,10 @@ def build_cclyzerpp():
     code |= os.system("cd cclyzerpp && cmake --build build -j $(nproc) --target factgen-exe")
     return code == 0
 
-def build_egglog():
+def build_egglog(args):
     shout("building egglog")
     code = 0
-    code |= os.system("cd egg-smol && cargo build --release")
+    code |= os.system(f"cd {args.egglog_path} && cargo build --release")
     return code == 0
 
 BENCHMARK_SETS = ['coreutils-8.24', 'postgresql-9.5.2']
@@ -98,7 +100,7 @@ def gen_benchmark_inputs():
 with open("main.egg") as f:
     MAIN_EGGLOG_CODE = f.read()
 
-def run_benchmark(benchmark_set, benchmark_name):
+def run_benchmark(args, benchmark_set, benchmark_name):
     print(f"running {benchmark_set}/{benchmark_name}")
     souffle_baselines = [
         ("naive-cclyzerpp.dl", args.disable_naive),
@@ -117,7 +119,7 @@ def run_benchmark(benchmark_set, benchmark_name):
             souffle_end_time = timer()
             times.append(souffle_end_time - souffle_start_time)
 
-    command = f"{EGGLOG_PATH} main.egg -F {input_dir} > /dev/null"
+    command = f"{args.egglog_path}/target/release/egg-smol main.egg -F {input_dir} > /dev/null"
     print(f"Running {command}")
     egglog_start_time = timer()
     if os.system(command) != 0 :
@@ -128,12 +130,12 @@ def run_benchmark(benchmark_set, benchmark_name):
     print(f"souffle takes time {times[0:3]}, egglog takes time {times[3]}")
     return times
 
-def run_all_benchmarks():
+def run_all_benchmarks(args):
     data = []
     for benchmark_set in BENCHMARK_SETS:
         benchmark_parent_dir = f"benchmark-input/{benchmark_set}"
         for benchmark_name in os.listdir(benchmark_parent_dir):
-            times = run_benchmark(benchmark_set, benchmark_name)
+            times = run_benchmark(args, benchmark_set, benchmark_name)
             data.append([
                 f"{benchmark_set}/{benchmark_name}",
                 times[0],
@@ -141,13 +143,17 @@ def run_all_benchmarks():
                 times[2],
                 times[3],
             ])
+    gm = statistics.geometric_mean([e / s for (_, s, e) in data])
+    total = sum([e for (_, _, e) in data]) / sum([s for (_, s, _) in data])
+    print(f"Geomean egglog/souffle: {gm}")
+    print(f"Total egglog/souffle: {total}")
     return data
 
 if args.build_cclyzerpp and not build_cclyzerpp():
     print("build cclyzer failed")
     exit(1)
 
-if args.build_egglog and not build_egglog():
+if args.build_egglog and not build_egglog(args):
     print("build egglog failed")
     exit(1)
 
@@ -169,7 +175,7 @@ if args.no_run:
 if args.run_benchmark is not None:
     benchmark = args.run_benchmark
     benchmark_set, benchmark_name = benchmark.split('/')
-    run_benchmark(benchmark_set, benchmark_name)
+    run_benchmark(args, benchmark_set, benchmark_name)
     exit()
 
 data = []
@@ -180,7 +186,7 @@ if args.read_data_from_cached:
         for row in reader:
             data.append((row[0], float(row[1]), float(row[2]), float(row[3]), float(row[4])))
 else:
-    data = run_all_benchmarks()
+    data = run_all_benchmarks(args)
 
     with open('benchmark_results.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
