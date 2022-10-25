@@ -1,50 +1,40 @@
 #include "types.dl"
 
-.decl eql(a:Allocation, b:Allocation) eqrel
+.decl unify(a: Allocation, b: Allocation)
 
-eql(a, a) :- unify_expr(_, a).
+.decl unify_expr(e: Operand, a: Allocation)
+.decl unify_ptr(a: Allocation, b: Allocation)
 
-eql(a, b) :-
+.decl expr_points_to_choice(e: Operand, a: Allocation) choice-domain e
+.decl ptr_points_to_choice(a: Allocation, b: Allocation) choice-domain a
+
+unify(a, a) :- unify_expr(_, a).  // includes all allocations via `malloc`
+
+unify(a, b) :-
   unify_expr(e, a),
   unify_expr(e, b),
   ord(a) <= ord(b).
 
-eql(b, c) :-
+unify(b, c) :-
   unify_ptr(a, b),
   unify_ptr(a, c),
   ord(b) <= ord(c).
 
-unify(a, b) :- eql(a, b).
-unify(a, b) <= unify(c, b) :-
-    as(c, number) <= as(a, number).
+unify(a, b) <=
+  unify(c, b) :-
+    ord(c) <= ord(a).
+
+unify_expr(e, a) :- constant_points_to(e, a).
+unify_ptr(a, b) :- constant_ptr_points_to(a, b).
+unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v).
 
 expr_points_to_choice(e, a) :- unify_expr(e, a).
 ptr_points_to_choice(e, a) :- unify_ptr(e, a).
 
-// congruence
 unify_ptr(a, to) :-
   ptr_points_to_choice(d, to),
-  // unify(r, a), unify(r, d).
-  eql(d, a).
-
-// constant
-unify_expr(e, a) :- constant_points_to(e, a).
-// constant_ptr
-unify_ptr(a, b) :- constant_ptr_points_to(a, b).
-// alloc
-unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v).
-
-// alias rule
-// eql(yAlloc, pAlloc) :-
-//   store_instruction_address(si, x),
-//   expr_points_to_choice(x, xAlloc),
-//   store_instruction_value(si, y),
-//   expr_points_to_choice(y, yAlloc),
-//   load_instruction_address(li, q),
-//   expr_points_to_choice(q, qAlloc),
-//   instruction_assigns_to(li, p),
-//   expr_points_to_choice(p, pAlloc),
-//   eql(xAlloc, qAlloc).
+  unify(l, a),
+  unify(l, d).
 
 // assign
 unify_expr(v, a) :-
@@ -56,6 +46,7 @@ unify_expr(e, b) :-
   load_instruction_address(i, u),
   instruction_assigns_to(i, e),
   expr_points_to_choice(u, a),
+  // unify(r, a), unify(r, a1), // all unified allocation of a
   ptr_points_to_choice(a, b).
 
 // store
@@ -123,9 +114,5 @@ ptr_points_to_final(a, r) :-
 
 .printsize expr_points_to_final
 .printsize ptr_points_to_final
-.printsize eql
-.printsize unify_expr
-.printsize unify_ptr
-.printsize unify
-// .output expr_points_to_final
 // .output ptr_points_to_final
+// .output expr_points_to_final

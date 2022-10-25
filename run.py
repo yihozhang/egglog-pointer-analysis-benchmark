@@ -9,6 +9,25 @@ import csv
 
 EGGLOG_PATH = "./egg-smol/target/release/egg-smol "
 FACT_GEN = "./cclyzerpp/build/factgen-exe "
+TIME_OUT = "20s"
+
+parser = argparse.ArgumentParser(description='Benchmarking egglog on the pointer analysis benchmark')
+parser.add_argument("--build-cclyzerpp", action='store_true')
+parser.add_argument("--build-egglog", action='store_true')
+parser.add_argument("--generate-bitcode-facts", action='store_true')
+parser.add_argument("--generate-benchmark-inputs", action='store_true')
+parser.add_argument("--generate-benchmark-inputs-for", action='store')
+parser.add_argument("--read-data-from-cached", action='store_true')
+parser.add_argument("--ignore-less-than-second", action='store_true')
+parser.add_argument("--no-viz", action='store_true')
+parser.add_argument("--run-benchmark", action='store')
+parser.add_argument("--no-run", action='store_true')
+
+parser.add_argument("--disable-naive", action='store_true')
+parser.add_argument("--disable-buggy", action='store_true')
+parser.add_argument("--disable-opt", action='store_true')
+
+args = parser.parse_args()
 
 def shout(msg):
     bars = "=" * len(msg)
@@ -80,14 +99,23 @@ with open("main.egg") as f:
     MAIN_EGGLOG_CODE = f.read()
 
 def run_benchmark(benchmark_set, benchmark_name):
+    print(f"running {benchmark_set}/{benchmark_name}")
+    souffle_baselines = [
+        ("naive-cclyzerpp.dl", args.disable_naive),
+        ("mini-cclyzerpp.dl", args.disable_buggy),
+        ("optimized-cclyzerpp.dl", args.disable_opt)
+    ]
     input_dir = f"benchmark-input/{benchmark_set}/{benchmark_name}"
-    command = f"souffle -F {input_dir} main.dl"
-    souffle_start_time = timer()
-    if os.system(command) != 0 :
-        print("error when run souffle on benchmarks")
-        exit(1)
-    souffle_end_time = timer()
-    souffle_duration = souffle_end_time - souffle_start_time
+    times = []
+    for (filename, disabled) in souffle_baselines:
+        command = f"timeout {TIME_OUT} souffle -F {input_dir} {filename}"
+        if disabled:
+            times.append(-1)
+        else:
+            souffle_start_time = timer()
+            os.system(command)
+            souffle_end_time = timer()
+            times.append(souffle_end_time - souffle_start_time)
 
     command = f"{EGGLOG_PATH} main.egg -F {input_dir} > /dev/null"
     print(f"Running {command}")
@@ -96,36 +124,24 @@ def run_benchmark(benchmark_set, benchmark_name):
         print("error when run egglog on benchmarks")
         exit(1)
     egglog_end_time = timer()
-    egglog_duration = egglog_end_time - egglog_start_time
-    print(f"souffle takes time {souffle_duration}, egglog takes time {egglog_duration}")
-    return (souffle_duration, egglog_duration)
+    times.append(egglog_end_time - egglog_start_time)
+    print(f"souffle takes time {times[0:3]}, egglog takes time {times[3]}")
+    return times
 
 def run_all_benchmarks():
     data = []
     for benchmark_set in BENCHMARK_SETS:
         benchmark_parent_dir = f"benchmark-input/{benchmark_set}"
         for benchmark_name in os.listdir(benchmark_parent_dir):
-            time = run_benchmark(benchmark_set, benchmark_name)
+            times = run_benchmark(benchmark_set, benchmark_name)
             data.append([
                 f"{benchmark_set}/{benchmark_name}",
-                time[0],
-                time[1],
+                times[0],
+                times[1],
+                times[2],
+                times[3],
             ])
     return data
-
-
-parser = argparse.ArgumentParser(description='Benchmarking egglog on the pointer analysis benchmark')
-parser.add_argument("--build-cclyzerpp", action='store_true')
-parser.add_argument("--build-egglog", action='store_true')
-parser.add_argument("--generate-bitcode-facts", action='store_true')
-parser.add_argument("--generate-benchmark-inputs", action='store_true')
-parser.add_argument("--generate-benchmark-inputs-for", action='store')
-parser.add_argument("--read-data-from-cached", action='store_true')
-parser.add_argument("--ignore-less-than-second", action='store_true')
-parser.add_argument("--no-viz", action='store_true')
-parser.add_argument("--run-benchmark", action='store')
-parser.add_argument("--no-run", action='store_true')
-args = parser.parse_args()
 
 if args.build_cclyzerpp and not build_cclyzerpp():
     print("build cclyzer failed")
@@ -162,7 +178,7 @@ if args.read_data_from_cached:
     with open('benchmark_results.csv', newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
-            data.append((row[0], float(row[1]), float(row[2])))
+            data.append((row[0], float(row[1]), float(row[2]), float(row[3]), float(row[4])))
 else:
     data = run_all_benchmarks()
 
@@ -172,18 +188,24 @@ else:
             writer.writerow(data[i])
 
 if args.ignore_less_than_second:
-    data = list(filter(lambda x: x[1] >= 1 or x[2] >= 1, data))
+    # ignore naive, since it's most likely to timeout
+    data = list(filter(lambda x: x[2] >= 1 or x[3] >= 1 or x[4] >= 1, data))
 
 benchmark_full_names = list(map(lambda x: x[0], data))
-souffle_run_times = list(map(lambda x: x[1], data))
-egglog_run_times = list(map(lambda x: x[2], data))
+run_times = [list(map(lambda x: x[i], data)) for i in range(1, 5)]
+# 0: naive
+# 1: buggy
+# 2: optimized
+# 3: egglog
 
 x = np.arange(len(benchmark_full_names))  # the label locations
-width = 0.35  # the width of the bars
+width = 0.18  # the width of the bars
 
 fig, ax = plt.subplots()
-rects1 = ax.bar(x - width/2, souffle_run_times, width, label='Souffle')
-rects2 = ax.bar(x + width/2, egglog_run_times, width, label='Egglog')
+rects1 = ax.bar(x - width - width/2, run_times[0], width, label='naive')
+rects2 = ax.bar(x - width/2, run_times[1], width, label='buggy')
+rects3 = ax.bar(x + width/2, run_times[2], width, label='optimized')
+rects4 = ax.bar(x + width + width/2, run_times[3], width, label='egglog')
 
 ax.set_ylabel('Time (s)')
 ax.set_title('Run time of cclyzer++ and egglog')

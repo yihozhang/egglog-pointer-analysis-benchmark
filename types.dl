@@ -53,12 +53,4 @@ unknown_location("*unknown*").
 .input allocation_by_instruction(IO=file, filename="allocation_by_instruction.csv")
 .decl getelementptr_instruction_base(instr:Instruction, ptr:Operand)
 .input getelementptr_instruction_base(IO=file, filename="getelementptr_instruction_base.csv")
-// to be computed
-.decl unify(a: Allocation, b: Allocation)
-
-.decl unify_expr(e: Operand, a: Allocation)
-.decl unify_ptr(a: Allocation, b: Allocation)
-
-.decl expr_points_to_choice(e: Operand, a: Allocation) choice-domain e
-.decl ptr_points_to_choice(a: Allocation, b: Allocation) choice-domain a
 
