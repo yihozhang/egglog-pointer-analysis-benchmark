@@ -31,11 +31,6 @@ unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v
 expr_points_to_choice(e, a) :- unify_expr(e, a).
 ptr_points_to_choice(e, a) :- unify_ptr(e, a).
 
-unify_ptr(a, to) :-
-  ptr_points_to_choice(d, to),
-  unify(l, a),
-  unify(l, d).
-
 // assign
 unify_expr(v, a) :-
   assign_instruction(v, e),
@@ -46,8 +41,8 @@ unify_expr(e, b) :-
   load_instruction_address(i, u),
   instruction_assigns_to(i, e),
   expr_points_to_choice(u, a),
-  // unify(r, a), unify(r, a1), // all unified allocation of a
-  ptr_points_to_choice(a, b).
+  unify(r, a), unify(r, a1), // all unified allocation of a
+  ptr_points_to_choice(a1, b).
 
 // store
 unify_ptr(a, b) :-
@@ -57,17 +52,11 @@ unify_ptr(a, b) :-
   expr_points_to_choice(u, b).
 
 // field (insensitive)
-// unify_ptr(e, a) :-
-//   alloc_subregion_root(ef, e),
-//   ptr_points_to_choice(ef, a).
 unify_expr(v, a) :-
   getelementptr_instruction_base(i, e),
   instruction_assigns_to(i, v),
   expr_points_to_choice(e, a).
 
-// unify_ptr(ef, a) :-
-//   alloc_subregion_root(ef, e),
-//   ptr_points_to_choice(e, a).
 unify_expr(e, a) :-
   getelementptr_instruction_base(i, e),
   instruction_assigns_to(i, v),
