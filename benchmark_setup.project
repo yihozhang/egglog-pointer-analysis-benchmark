@@ -1,6 +1,5 @@
-#include "cclyzerpp/datalog/common.project"
+#include "cclyzerpp/datalog/unification.project"
 
-.init points_to = PointsTo
 
 // constants
 .decl constant_ptr_points_to_no_ctx(?alloc: Allocation, ?ptrAlloc: Allocation)
@@ -41,3 +40,12 @@ constant_ptr_points_to_no_ctx(a, p) :- constant_ptr_points_to(_, a, _, p).
 
 .output ret_instruction
 .output ret_instruction_value
+
+// Analyses beyond basic
+
+.output unification_subobjects.alloc_subregion_at_path(filename="alloc_subregion_at_path.csv")
+.output unification_aliases.alloc_aliases(filename="alloc_aliases.csv")
+.decl gep_var_points_to(var: Variable, alloc: Allocation)
+gep_var_points_to(var, alloc) :- unification_gep.gep_var_points_to(_, alloc, _, var).
+.output gep_var_points_to
+.output allocation
