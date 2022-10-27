@@ -143,8 +143,8 @@ def run_all_benchmarks(args):
                 times[2],
                 times[3],
             ])
-    gm = statistics.geometric_mean([e / s for (_, s, e) in data])
-    total = sum([e for (_, _, e) in data]) / sum([s for (_, s, _) in data])
+    gm = statistics.geometric_mean([e / s for (_, _naive, _buggy, s, e) in data])
+    total = sum([e for (_, _naive, _buggy, _, e) in data]) / sum([s for (_, _naive, _buggy, s, _) in data])
     print(f"Geomean egglog/souffle: {gm}")
     print(f"Total egglog/souffle: {total}")
     return data
