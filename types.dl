@@ -71,3 +71,5 @@ unknown_location("*unknown*").
 .input gep_var_points_to(IO=file, filename="gep_var_points_to.csv")
 .decl allocation(alloc:Allocation)
 .input allocation(IO=file, filename="allocation.csv")
+.decl alloc_matches(alloc1: Allocation, alloc2: Allocation)
+.input alloc_matches(IO=file, filename="alloc_matches.csv")

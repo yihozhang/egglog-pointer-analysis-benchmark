@@ -14,12 +14,12 @@ eql(a, a) :- unify_expr(_, a).
 eql(a, a) :- allocation(a).
 
 eql(a, b) :-
-  unify_expr(e, a),
+  expr_points_to_choice(e, a),
   unify_expr(e, b),
   ord(a) <= ord(b).
 
 eql(b, c) :-
-  unify_ptr(a, b),
+  ptr_points_to_choice(a, b),
   unify_ptr(a, c),
   ord(b) <= ord(c).
 
@@ -44,18 +44,6 @@ unify_ptr(a, b) :- constant_ptr_points_to(a, b).
 // alloc
 unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v).
 
-// alias rule
-// eql(yAlloc, pAlloc) :-
-//   store_instruction_address(si, x),
-//   expr_points_to_choice(x, xAlloc),
-//   store_instruction_value(si, y),
-//   expr_points_to_choice(y, yAlloc),
-//   load_instruction_address(li, q),
-//   expr_points_to_choice(q, qAlloc),
-//   instruction_assigns_to(li, p),
-//   expr_points_to_choice(p, pAlloc),
-//   eql(xAlloc, qAlloc).
-
 // assign
 unify_expr(v, a) :-
   assign_instruction(v, e),
@@ -67,6 +55,13 @@ unify_expr(e, b) :-
   instruction_assigns_to(i, e),
   expr_points_to_choice(u, a),
   ptr_points_to_choice(a, b).
+
+unify_expr(e, b) :-
+  load_instruction_address(i, u),
+  instruction_assigns_to(i, e),
+  expr_points_to_choice(u, baseAlloc),
+  alloc_matches(lessGenericAlloc, baseAlloc),
+  ptr_points_to_choice(lessGenericAlloc, b).
 
 // store
 unify_ptr(a, b) :-

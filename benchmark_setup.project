@@ -49,3 +49,4 @@ constant_ptr_points_to_no_ctx(a, p) :- constant_ptr_points_to(_, a, _, p).
 gep_var_points_to(var, alloc) :- unification_gep.gep_var_points_to(_, alloc, _, var).
 .output gep_var_points_to
 .output allocation
+.output unification_aliases.alloc_matches(filename="alloc_matches.csv")

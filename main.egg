@@ -51,6 +51,8 @@
 (input gep_var_points_to "gep_var_points_to.csv")
 (relation allocation (String))
 (input allocation "allocation.csv")
+(relation RAW_alloc_matches (String String))
+(input RAW_alloc_matches "alloc_matches.csv")
 
 (datatype Allocation (A String))
 
@@ -62,6 +64,13 @@
     (allocation alloc)
 )(
     (A alloc)
+))
+
+(relation alloc_matches (Allocation Allocation))
+(rule (
+    (RAW_alloc_matches lessGenericAlloc alloc)
+)(
+    (alloc_matches (A lessGenericAlloc) (A alloc))
 ))
 
 ;; gep
@@ -93,21 +102,6 @@
     (union (expr_points_to v) (A a))
 ))
 
-;; alias rule
-;; (rule (
-;;     (store_instruction_address si x)
-;;     (= (expr_points_to x) xAlloc)
-;;     (store_instruction_value si y)
-;;     (= (expr_points_to y) yAlloc)
-;;     (load_instruction_address li q)
-;;     (= (expr_points_to q) qAlloc)
-;;     (instruction_assigns_to li p)
-;;     (= (expr_points_to p) pAlloc)
-;;     (= xAlloc qAlloc)
-;; )(
-;;     (union yAlloc pAlloc)
-;; ))
-
 ;; assign
 (rule (
     (assign_instruction v e)
@@ -125,6 +119,17 @@
 )(
     (union (expr_points_to e) b)
 ))
+
+(rule (
+    (load_instruction_address i u)
+    (instruction_assigns_to i e)
+    (= (expr_points_to u) baseAlloc)
+    (alloc_matches lessGenericAlloc baseAlloc)
+    (= (ptr_points_to lessGenericAlloc) b)
+)(
+    (union (expr_points_to e) b)
+))
+
 
 ;; store
 (rule (

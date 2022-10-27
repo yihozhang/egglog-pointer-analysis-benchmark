@@ -12,12 +12,14 @@ unify(a, a) :- unify_expr(_, a).
 unify(a, a) :- allocation(a).
 
 unify(a, b) :-
-  unify_expr(e, a),
+  // unify_expr(e, a),
+  expr_points_to_choice(e, a),
   unify_expr(e, b),
   ord(a) <= ord(b).
 
 unify(b, c) :-
-  unify_ptr(a, b),
+  // unify_ptr(a, b),
+  ptr_points_to_choice(a, b),
   unify_ptr(a, c),
   ord(b) <= ord(c).
 
@@ -33,6 +35,14 @@ unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v
 expr_points_to_choice(e, a) :- unify_expr(e, a).
 ptr_points_to_choice(e, a) :- unify_ptr(e, a).
 
+// These are the "congruence rule" of cclyzer++ encoding
+unify_ptr(baseAlloc, alloc1) :-
+  unify_ptr(baseAlloc, alloc2),
+  alloc_aliases(alloc1, alloc2).
+unify_ptr(baseAlloc1, alloc) :-
+  ptr_points_to_choice(baseAlloc2, alloc),
+  alloc_aliases(baseAlloc1, baseAlloc2).
+
 // assign
 unify_expr(v, a) :-
   assign_instruction(v, e),
@@ -45,6 +55,14 @@ unify_expr(e, b) :-
   expr_points_to_choice(u, a),
   unify(r, a), unify(r, a1), // all unified allocation of a
   ptr_points_to_choice(a1, b).
+
+unify_expr(e, b) :-
+  load_instruction_address(i, u),
+  instruction_assigns_to(i, e),
+  expr_points_to_choice(u, a),
+  unify(r, a), unify(r, baseAlloc), // all unified allocation of a
+  alloc_matches(lessGenericAlloc, baseAlloc),
+  ptr_points_to_choice(lessGenericAlloc, b).
 
 // store
 unify_ptr(a, b) :-
