@@ -139,5 +139,3 @@ ptr_points_to_final(a, r) :-
 
 .printsize expr_points_to_final
 .printsize ptr_points_to_final
-.output expr_points_to_final
-.output ptr_points_to_final
