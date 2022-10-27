@@ -8,7 +8,8 @@
 .decl expr_points_to_choice(e: Operand, a: Allocation) choice-domain e
 .decl ptr_points_to_choice(a: Allocation, b: Allocation) choice-domain a
 
-unify(a, a) :- unify_expr(_, a).  // includes all allocations via `malloc`
+unify(a, a) :- unify_expr(_, a).
+unify(a, a) :- allocation(a).
 
 unify(a, b) :-
   unify_expr(e, a),
@@ -24,6 +25,7 @@ unify(a, b) <=
   unify(c, b) :-
     ord(c) <= ord(a).
 
+unify_expr(v, a) :- gep_var_points_to(v, a).
 unify_expr(e, a) :- constant_points_to(e, a).
 unify_ptr(a, b) :- constant_ptr_points_to(a, b).
 unify_expr(v, a) :- allocation_by_instruction(i, a), instruction_assigns_to(i, v).
@@ -80,6 +82,44 @@ unify_expr(to_var, a) :-
   instruction_assigns_to(call_instr, to_var),
   expr_points_to_choice(u, a).
 
+// subregions
+.decl unify0(a: Allocation, b: Allocation)
+unify0(?subAlloc1,?subAlloc2) :- 
+  alloc_aliases(?mustAlias,?alloc), 
+  alloc_subregion_at_path(?alloc,?path,?subAlloc1), 
+  alloc_subregion_at_path(?mustAlias,?path,?subAlloc2).
+
+unify0(?subAlloc1,?subAlloc2) :- 
+  ptr_points_to_choice(?ptr, ?alloc1), 
+  unify_ptr(?ptr, ?alloc2), 
+  alloc_subregion_at_path(?alloc1,?path,?subAlloc1), 
+  alloc_subregion_at_path(?alloc2,?path,?subAlloc2). 
+
+unify0(?subAlloc1,?subAlloc2) :- 
+  expr_points_to_choice(?var, ?alloc1), 
+  unify_expr(?var, ?alloc2), 
+  alloc_subregion_at_path(?alloc1,?path,?subAlloc1), 
+  alloc_subregion_at_path(?alloc2,?path,?subAlloc2).
+
+unify0(?baseAlloc1, ?baseAlloc2) :- alloc_aliases(?baseAlloc1, ?baseAlloc2).
+
+unify(?r1, ?r2) :-
+  unify0(?x, ?y),
+  ( ( unify(?r1, ?x),
+      unify(?r2, ?y),
+      ord(?r1) <= ord(?r2)
+    )
+  ; ( unify(?r1, ?y),
+      unify(?r2, ?x),
+      ord(?r1) <= ord(?r2)
+    )
+  ).
+
+
+///////////////////////////////
+// Presentation 
+///////////////////////////////
+
 .decl is_repr(repr: Allocation)
 is_repr(repr) :-
   unify(repr, _),
@@ -103,5 +143,6 @@ ptr_points_to_final(a, r) :-
 
 .printsize expr_points_to_final
 .printsize ptr_points_to_final
+.printsize unify
 // .output ptr_points_to_final
 // .output expr_points_to_final

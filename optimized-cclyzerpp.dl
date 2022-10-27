@@ -11,6 +11,7 @@
 .decl eql(a:Allocation, b:Allocation) eqrel
 
 eql(a, a) :- unify_expr(_, a).
+eql(a, a) :- allocation(a).
 
 eql(a, b) :-
   unify_expr(e, a),
@@ -24,8 +25,9 @@ eql(b, c) :-
 
 unify(a, b) :- eql(a, b).
 unify(a, b) <= unify(c, b) :-
-    as(c, number) <= as(a, number).
+    ord(c) <= ord(a).
 
+unify_expr(v, a) :- gep_var_points_to(v, a).
 expr_points_to_choice(e, a) :- unify_expr(e, a).
 ptr_points_to_choice(e, a) :- unify_ptr(e, a).
 
@@ -100,6 +102,25 @@ unify_expr(to_var, a) :-
   instruction_assigns_to(call_instr, to_var),
   expr_points_to_choice(u, a).
 
+eql(?subAlloc1,?subAlloc2) :- 
+  alloc_aliases(?mustAlias,?alloc), 
+  alloc_subregion_at_path(?alloc,?path,?subAlloc1), 
+  alloc_subregion_at_path(?mustAlias,?path,?subAlloc2).
+
+eql(?subAlloc1,?subAlloc2) :- 
+  ptr_points_to_choice(?ptr, ?alloc1), 
+  unify_ptr(?ptr, ?alloc2), 
+  alloc_subregion_at_path(?alloc1,?path,?subAlloc1), 
+  alloc_subregion_at_path(?alloc2,?path,?subAlloc2). 
+
+eql(?subAlloc1,?subAlloc2) :- 
+  expr_points_to_choice(?var, ?alloc1), 
+  unify_expr(?var, ?alloc2), 
+  alloc_subregion_at_path(?alloc1,?path,?subAlloc1), 
+  alloc_subregion_at_path(?alloc2,?path,?subAlloc2).
+
+eql(?baseAlloc1, ?baseAlloc2) :- alloc_aliases(?baseAlloc1, ?baseAlloc2).
+
 .decl is_repr(repr: Allocation)
 is_repr(repr) :-
   unify(repr, _),
@@ -123,5 +144,5 @@ ptr_points_to_final(a, r) :-
 
 .printsize expr_points_to_final
 .printsize ptr_points_to_final
-// .output expr_points_to_final
-// .output ptr_points_to_final
+.output expr_points_to_final
+.output ptr_points_to_final

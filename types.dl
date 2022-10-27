@@ -54,3 +54,20 @@ unknown_location("*unknown*").
 .decl getelementptr_instruction_base(instr:Instruction, ptr:Operand)
 .input getelementptr_instruction_base(IO=file, filename="getelementptr_instruction_base.csv")
 
+// Analyses beyond basic
+// .decl callgraph_edge(callee: Function, caller: Instruction)
+// .input callgraph_edge(IO=file, filename="callgraph_edge.csv")
+// .decl function_param_not_by_value(?callee: Function, ?index: Index, ?param: Variable)
+// .input function_param_not_by_value(IO=file, filename="function_param_not_by_value.csv")
+// .decl actual_arg(?instr: Instruction, ?index: Index, ?argument: Operand)
+// .input actual_arg(IO=file, filename="actual_arg.csv")
+
+.type Path <: symbol
+.decl alloc_subregion_at_path(baseAlloc: Allocation, path: Path, subAlloc: Allocation)
+.input alloc_subregion_at_path(IO=file, filename="alloc_subregion_at_path.csv")
+.decl alloc_aliases(alloc1: Allocation, alloc2: Allocation)
+.input alloc_aliases(IO=file, filename="alloc_aliases.csv")
+.decl gep_var_points_to(var: Variable, alloc: Allocation)
+.input gep_var_points_to(IO=file, filename="gep_var_points_to.csv")
+.decl allocation(alloc:Allocation)
+.input allocation(IO=file, filename="allocation.csv")

@@ -42,10 +42,34 @@
 (relation getelementptr_instruction_base (String String))
 (input getelementptr_instruction_base "getelementptr_instruction_base.csv")
 
+;; Analyses beyond basic
+(relation RAW_alloc_subregion_at_path (String String String))
+(input RAW_alloc_subregion_at_path "alloc_subregion_at_path.csv")
+(relation alloc_aliases (String String))
+(input alloc_aliases "alloc_aliases.csv")
+(relation gep_var_points_to (String String))
+(input gep_var_points_to "gep_var_points_to.csv")
+(relation allocation (String))
+(input allocation "allocation.csv")
+
 (datatype Allocation (A String))
 
 (function expr_points_to (String) Allocation)
 (function ptr_points_to (Allocation) Allocation)
+
+;; populate allocations
+(rule (
+    (allocation alloc)
+)(
+    (A alloc)
+))
+
+;; gep
+(rule (
+    (gep_var_points_to e a)
+)(
+    (union (expr_points_to e) (A a))
+))
 
 ;; constant
 (rule (
@@ -163,7 +187,21 @@
 )(
     (union (expr_points_to to_var) a)
 ))
-;; (run 13)
+
+(function alloc_subregion_at_path (Allocation String) Allocation)
+;; this rule subsumes the two rules with unify0
+(rule (
+    (RAW_alloc_subregion_at_path alloc path subAlloc)
+)(
+    (union (alloc_subregion_at_path (A alloc) path) (A subAlloc))
+))
+;; this rule subsumes the rule with alloc_aliases
+(rule (
+    (alloc_aliases alloc1 alloc2)
+)(
+    (union (A alloc1) (A alloc2))
+))
+
 (run 100000)
 
 (print-size expr_points_to)
