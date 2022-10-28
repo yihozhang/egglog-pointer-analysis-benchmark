@@ -112,14 +112,14 @@ def run_benchmark(args, benchmark_set, benchmark_name):
     for (filename, disabled) in souffle_baselines:
         command = f"timeout {TIME_OUT} souffle -F {input_dir} {filename}"
         if disabled:
-            times.append(-1)
+            times.append(0)
         else:
             souffle_start_time = timer()
             os.system(command)
             souffle_end_time = timer()
             times.append(souffle_end_time - souffle_start_time)
 
-    command = f"{args.egglog_path}/target/release/egg-smol main.egg -F {input_dir} > /dev/null"
+    command = f"{args.egglog_path}/target/release/egg-smol main.egg -F {input_dir} > /dev/null 2> /dev/null"
     print(f"Running {command}")
     egglog_start_time = timer()
     if os.system(command) != 0 :
@@ -209,8 +209,8 @@ width = 0.18  # the width of the bars
 
 fig, ax = plt.subplots()
 rects1 = ax.bar(x - width - width/2, run_times[0], width, label='naive')
-rects2 = ax.bar(x - width/2, run_times[1], width, label='buggy')
-rects3 = ax.bar(x + width/2, run_times[2], width, label='optimized')
+rects2 = ax.bar(x - width/2, run_times[1], width, label='patched')
+rects3 = ax.bar(x + width/2, run_times[2], width, label='cclyzerpp')
 rects4 = ax.bar(x + width + width/2, run_times[3], width, label='egglog')
 
 ax.set_ylabel('Time (s)')

@@ -71,14 +71,14 @@ eql(?subAlloc1,?subAlloc2) :-
   alloc_subregion_at_path(?mustAlias,?path,?subAlloc2).
 
 eql(?subAlloc1,?subAlloc2) :- 
-  ptr_points_to_choice(?ptr, ?alloc1), 
-  unify_ptr(?ptr, ?alloc2), 
+  ptr_points_to(?ptr, ?alloc1), 
+  ptr_points_to(?ptr, ?alloc2), 
   alloc_subregion_at_path(?alloc1,?path,?subAlloc1), 
   alloc_subregion_at_path(?alloc2,?path,?subAlloc2). 
 
 eql(?subAlloc1,?subAlloc2) :- 
-  expr_points_to_choice(?var, ?alloc1), 
-  unify_expr(?var, ?alloc2), 
+  expr_points_to(?var, ?alloc1), 
+  expr_points_to(?var, ?alloc2), 
   alloc_subregion_at_path(?alloc1,?path,?subAlloc1), 
   alloc_subregion_at_path(?alloc2,?path,?subAlloc2).
 
