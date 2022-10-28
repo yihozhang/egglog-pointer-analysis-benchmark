@@ -26,8 +26,8 @@ parser.add_argument("--run-benchmark", action='store')
 parser.add_argument("--no-run", action='store_true')
 
 parser.add_argument("--disable-naive", action='store_true')
+parser.add_argument("--disable-sound", action='store_true')
 parser.add_argument("--disable-buggy", action='store_true')
-parser.add_argument("--disable-opt", action='store_true')
 
 args = parser.parse_args()
 
@@ -104,8 +104,8 @@ def run_benchmark(args, benchmark_set, benchmark_name):
     print(f"running {benchmark_set}/{benchmark_name}")
     souffle_baselines = [
         ("naive-cclyzerpp.dl", args.disable_naive),
+        ("sound-cclyzerpp.dl", args.disable_sound),
         ("mini-cclyzerpp.dl", args.disable_buggy),
-        ("optimized-cclyzerpp.dl", args.disable_opt)
     ]
     input_dir = f"benchmark-input/{benchmark_set}/{benchmark_name}"
     times = []
