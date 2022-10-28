@@ -141,34 +141,21 @@
     (union (ptr_points_to a) b)
 ))
 
-;; field (insensitive)
 ;; (rule (
-;;     (alloc_subregion_root ef e)
-;;     (= (ptr_points_to (A ef)) a)
+;;     (getelementptr_instruction_base i e)
+;;     (instruction_assigns_to i v)
+;;     (= (expr_points_to v) a)
 ;; )(
-;;     (union (ptr_points_to (A e)) a)
+;;     (union (expr_points_to e) a)
 ;; ))
-(rule (
-    (getelementptr_instruction_base i e)
-    (instruction_assigns_to i v)
-    (= (expr_points_to v) a)
-)(
-    (union (expr_points_to e) a)
-))
 
 ;; (rule (
-;;     (alloc_subregion_root ef e)
-;;     (= (ptr_points_to (A e)) a)
+;;     (getelementptr_instruction_base i e)
+;;     (instruction_assigns_to i v)
+;;     (= (expr_points_to e) a)
 ;; )(
-;;     (union (ptr_points_to (A ef)) a)
+;;     (union (expr_points_to v) a)
 ;; ))
-(rule (
-    (getelementptr_instruction_base i e)
-    (instruction_assigns_to i v)
-    (= (expr_points_to e) a)
-)(
-    (union (expr_points_to v) a)
-))
 
 ;; If `f(t* x)`, `f(v)`, and `v -> a`, then `x -> a`.
 (rule (

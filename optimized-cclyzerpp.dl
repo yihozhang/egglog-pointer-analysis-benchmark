@@ -71,15 +71,15 @@ unify_ptr(a, b) :-
   expr_points_to_choice(u, b).
 
 // field
-unify_expr(v, a) :-
-  getelementptr_instruction_base(i, e),
-  instruction_assigns_to(i, v),
-  expr_points_to_choice(e, a).
+// unify_expr(v, a) :-
+//   getelementptr_instruction_base(i, e),
+//   instruction_assigns_to(i, v),
+//   expr_points_to_choice(e, a).
 
-unify_expr(e, a) :-
-  getelementptr_instruction_base(i, e),
-  instruction_assigns_to(i, v),
-  expr_points_to_choice(v, a).
+// unify_expr(e, a) :-
+//   getelementptr_instruction_base(i, e),
+//   instruction_assigns_to(i, v),
+//   expr_points_to_choice(v, a).
 
 // If `f(t* x)`, `f(v)`, and `v -> a`, then `x -> a`.
 unify_expr(x, a) :-
