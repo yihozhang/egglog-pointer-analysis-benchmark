@@ -119,6 +119,17 @@ def run_benchmark(args, benchmark_set, benchmark_name):
             souffle_end_time = timer()
             times.append(souffle_end_time - souffle_start_time)
 
+    # egglog without seminaive
+    command = f"{args.egglog_path}/target/release/egg-smol main.egg --naive -F {input_dir} > /dev/null 2> /dev/null"
+    print(f"Running {command}")
+    egglog_start_time = timer()
+    if os.system(command) != 0 :
+        print("error when run egglog on benchmarks")
+        exit(1)
+    egglog_end_time = timer()
+    times.append(egglog_end_time - egglog_start_time)
+
+    # egglog with seminaive
     command = f"{args.egglog_path}/target/release/egg-smol main.egg -F {input_dir} > /dev/null 2> /dev/null"
     print(f"Running {command}")
     egglog_start_time = timer()
@@ -142,11 +153,8 @@ def run_all_benchmarks(args):
                 times[1],
                 times[2],
                 times[3],
+                times[4],
             ])
-    gm = statistics.geometric_mean([e / s for (_, _naive, _buggy, s, e) in data])
-    total = sum([e for (_, _naive, _buggy, _, e) in data]) / sum([s for (_, _naive, _buggy, s, _) in data])
-    print(f"Geomean egglog/souffle: {gm}")
-    print(f"Total egglog/souffle: {total}")
     return data
 
 if args.build_cclyzerpp and not build_cclyzerpp():
@@ -184,7 +192,7 @@ if args.read_data_from_cached:
     with open('benchmark_results.csv', newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
-            data.append((row[0], float(row[1]), float(row[2]), float(row[3]), float(row[4])))
+            data.append((row[0], float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5])))
 else:
     data = run_all_benchmarks(args)
 
@@ -193,25 +201,32 @@ else:
         for i in range(len(data)):
             writer.writerow(data[i])
 
+gm = statistics.geometric_mean([e / s for (_, _naive, _buggy, s, _, e) in data])
+total = sum([e for (_, _naive, _buggy, _, _, e) in data]) / sum([s for (_, _naive, _buggy, s, _, _) in data])
+print(f"Geomean egglog/souffle: {gm}")
+print(f"Total egglog/souffle: {total}")
+
 if args.ignore_less_than_second:
     # ignore naive, since it's most likely to timeout
-    data = list(filter(lambda x: x[2] >= 1 or x[3] >= 1 or x[4] >= 1, data))
+    data = list(filter(lambda x: x[2] >= 1 or x[3] >= 1 or x[4] >= 1 or x[5] >= 1, data))
 
 benchmark_full_names = list(map(lambda x: x[0], data))
-run_times = [list(map(lambda x: x[i], data)) for i in range(1, 5)]
+run_times = [list(map(lambda x: x[i], data)) for i in range(1, 6)]
 # 0: naive
 # 1: buggy
 # 2: optimized
-# 3: egglog
+# 3: egglog-SN
+# 4: egglog
 
 x = np.arange(len(benchmark_full_names))  # the label locations
-width = 0.18  # the width of the bars
+width = 0.145  # the width of the bars
 
 fig, ax = plt.subplots()
 rects1 = ax.bar(x - width - width/2, run_times[0], width, label='naive')
 rects2 = ax.bar(x - width/2, run_times[1], width, label='patched')
 rects3 = ax.bar(x + width/2, run_times[2], width, label='cclyzerpp')
-rects4 = ax.bar(x + width + width/2, run_times[3], width, label='egglog')
+rects4 = ax.bar(x + width + width/2, run_times[3], width, label='egglog-SN')
+rects5 = ax.bar(x + 2 * width + width/2, run_times[4], width, label='egglog')
 
 ax.set_ylabel('Time (s)')
 ax.set_title('Run time of cclyzer++ and egglog')
