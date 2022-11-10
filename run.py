@@ -50,7 +50,10 @@ def build_egglog(args):
     code |= os.system(f"cd {args.egglog_path} && cargo build --release")
     return code == 0
 
-BENCHMARK_SETS = ['coreutils-8.24', 'postgresql-9.5.2']
+BENCHMARK_SETS = [
+    # 'coreutils-8.24', 
+    'postgresql-9.5.2'
+]
 def gen_facts_from_bc():
     for benchmark_set in BENCHMARK_SETS:
         benchmark_dir = f"benchmarks/{benchmark_set}"
@@ -201,35 +204,42 @@ else:
         for i in range(len(data)):
             writer.writerow(data[i])
 
-gm = statistics.geometric_mean([e / s for (_, _naive, _buggy, s, _, e) in data])
+hm1 = statistics.harmonic_mean([_patched / _egglog for (_, _naive, _patched, _cclyzerpp, _egglognaive, _egglog) in data])
+hm2 = statistics.harmonic_mean([_cclyzerpp / _egglog for (_, _naive, _patched, _cclyzerpp, _egglognaive, _egglog) in data])
+hm3 = statistics.harmonic_mean([_egglognaive / _egglog for (_, _naive, _patched, _cclyzerpp, _egglognaive, _egglog) in data])
 total = sum([e for (_, _naive, _buggy, _, _, e) in data]) / sum([s for (_, _naive, _buggy, s, _, _) in data])
-print(f"Geomean egglog/souffle: {gm}")
+print(f"Harmonic egglog/patched:     {hm1}")
+print(f"Harmonic egglog/cclyzerpp:   {hm2}")
+print(f"Harmonic egglog/egglognaive: {hm3}")
 print(f"Total egglog/souffle: {total}")
 
 if args.ignore_less_than_second:
     # ignore naive, since it's most likely to timeout
     data = list(filter(lambda x: x[2] >= 1 or x[3] >= 1 or x[4] >= 1 or x[5] >= 1, data))
-
+data = sorted(data, key=lambda x: x[2])
 benchmark_full_names = list(map(lambda x: x[0], data))
-run_times = [list(map(lambda x: x[i], data)) for i in range(1, 6)]
+benchmark_full_names = list(map(lambda x: x.split('/')[1][:-3], benchmark_full_names))
+
+run_times = [list(map(lambda x: 0 if x[i] > 19.5 else x[i], data)) for i in range(1, 6)]
 # 0: naive
-# 1: buggy
-# 2: optimized
-# 3: egglog-SN
+# 1: patched
+# 2: cclyzerpp
+# 3: egglog-naive
 # 4: egglog
 
 x = np.arange(len(benchmark_full_names))  # the label locations
-width = 0.145  # the width of the bars
+width = 0.2  # the width of the bars
 
 fig, ax = plt.subplots()
-rects1 = ax.bar(x - width - width/2, run_times[0], width, label='naive')
+ax.set_yscale('log')
+rects1 = ax.bar(x - width - width/2, run_times[0], width, label='eqrel')
 rects2 = ax.bar(x - width/2, run_times[1], width, label='patched')
 rects3 = ax.bar(x + width/2, run_times[2], width, label='cclyzerpp')
-rects4 = ax.bar(x + width + width/2, run_times[3], width, label='egglog-SN')
-rects5 = ax.bar(x + 2 * width + width/2, run_times[4], width, label='egglog')
+rects4 = ax.bar(x + width + width/2, run_times[3], width, label='EqLog-naive')
+rects5 = ax.bar(x + 2 * width + width/2, run_times[4], width, label='EqLog')
 
 ax.set_ylabel('Time (s)')
-ax.set_title('Run time of cclyzer++ and egglog')
+ax.set_title('Run time of cclyzer++ and EqLog')
 ax.set_xticks(x, benchmark_full_names, rotation='vertical')
 ax.legend()
 
@@ -237,7 +247,7 @@ ax.legend()
 # ax.bar_label(rects2, padding=3)
 
 fig.tight_layout()
-plt.savefig('plot.png')
+plt.savefig('plot.pdf')
 
 if not args.no_viz:
     plt.show()

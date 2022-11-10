@@ -6,3 +6,5 @@ benchmark_setup.cpp
 copied.egg
 egglog-inputs/
 .DS_Store
+
+!benchmark_results-submit.csv
