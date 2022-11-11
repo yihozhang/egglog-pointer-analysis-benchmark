@@ -6,6 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+matplotlib.rcParams['savefig.bbox'] = 'tight'
+matplotlib.rcParams['font.size'] = 9
+
+
 # NOTE that we are only comparing against souffle interpreter mode single thread
 
 DEFAULT_EGGLOG_DIR = "./egg-smol/"
@@ -247,6 +254,7 @@ ax.legend()
 # ax.bar_label(rects2, padding=3)
 
 fig.tight_layout()
+fig.set_size_inches(10, 6)
 plt.savefig('plot.pdf')
 
 if not args.no_viz:
