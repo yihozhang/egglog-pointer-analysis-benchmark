@@ -242,7 +242,7 @@ ax.set_yscale('log')
 rects1 = ax.bar(x - width - width/2, run_times[0], width, label='eqrel')
 rects2 = ax.bar(x - width/2, run_times[1], width, label='patched')
 rects3 = ax.bar(x + width/2, run_times[2], width, label='cclyzerpp')
-rects4 = ax.bar(x + width + width/2, run_times[3], width, label='EqLog-naive')
+rects4 = ax.bar(x + width + width/2, run_times[3], width, label='EqLogNI')
 rects5 = ax.bar(x + 2 * width + width/2, run_times[4], width, label='EqLog')
 
 ax.set_ylabel('Time (s)')
